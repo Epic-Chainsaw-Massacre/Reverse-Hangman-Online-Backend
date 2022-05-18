@@ -5,14 +5,19 @@
         // Properties
         public string Word { get; private set; }
         public bool Exists { get; private set; }
+        //public List<string> DifferentLettersInWord { get; private set; }
 
         // Methods
         public WordClass(string word, bool exists)
         {
             Word = word;
             Exists = exists;
+            //DifferentLettersInWord = new List<string>();
         }
-
+        static public int GetLives(List<string> differentLettersInWord)
+        {
+            return (int)Math.Ceiling(Convert.ToDouble(differentLettersInWord.Count / 2));
+        }
         static public List<string> CountDifferentLetters(string word)
         {
             List<string> differentLetters = new List<string>();

@@ -70,7 +70,7 @@ app.MapGet("/test3", ([FromUri] string word) =>
 app.MapGet("/Lives", ([FromUri] string word) =>
 {
     _differentLettersInWord = WordClass.CountDifferentLetters(word);
-    return _differentLettersInWord.Count;
+    return WordClass.GetLives(_differentLettersInWord);
 }).WithName("GetLives");
 
 app.Run();
