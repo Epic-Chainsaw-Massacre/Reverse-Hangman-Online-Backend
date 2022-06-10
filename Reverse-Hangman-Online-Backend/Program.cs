@@ -72,6 +72,12 @@ app.MapGet("/Goal", ([FromUri] string word) =>
     return gameSetup.game.teamCollection.GetTeamList()[0].GuessCollection.CalculateGoal(gameSetup.differentLettersInWord);
 }).WithName("GetGoal");
 
+//app.MapGet("/GuessLetter", ([FromUri] string letter) =>
+//{
+//    gameSetup.game.LetterClickHandler(letter);
+//    return "notimplementedexception";
+//}).WithName("GetGoal");
+
 app.Run();
 
 
@@ -79,16 +85,16 @@ public class GameSetup
 {
     // Properties
     public List<string> differentLettersInWord = new List<string>();
-    Team team1 = new Team("team1", new GuessCollection());
-    Team team2 = new Team("team2", new GuessCollection());
-    TeamCollection teamCollection = new TeamCollection();
     public Game game;
+    Team _team1 = new Team("team1", new GuessCollection());
+    Team _team2 = new Team("team2", new GuessCollection());
+    TeamCollection _teamCollection = new TeamCollection();
 
     public GameSetup()
     {
-        teamCollection.AddTeam(new Team("team1", new GuessCollection()));
-        teamCollection.AddTeam(new Team("team2", new GuessCollection()));
-        game = new Game(teamCollection);
+        _teamCollection.AddTeam(new Team("team1", new GuessCollection()));
+        _teamCollection.AddTeam(new Team("team2", new GuessCollection()));
+        game = new Game(_teamCollection);
     }
 }
 
@@ -96,11 +102,12 @@ public class GameSetup
 public class Game
 {
     // Fields
-    List<string> _differentLettersInWord = new List<string>();
     public TeamCollection teamCollection;
+    public Team guesser;
+    public Team wordMaster;
+    List<string> _differentLettersInWord = new List<string>();
     WordClass _wordClass;
-    public Team _guesser;
-    public Team _wordMaster;
+    AlphabetClass _alphabetClass;
 
     // Methods
     public Game(TeamCollection importTeamCollection)
@@ -110,31 +117,26 @@ public class Game
 
     public void Guess(string myLetter)
     {
-        new Guess(myLetter, _guesser, _wordClass);
-        UpdateRemainingLetters();
-        UpdateStripes();
-        CheckIfDead(_guesser.Lives);
-        _guesser.EndOfGuess();
-        UpdatePoints();
+        new Guess(myLetter, guesser, _wordClass);
+        CheckIfDead(guesser.Lives);
+        guesser.EndOfGuess();
         CheckIfRoundIsOver();
     }
     void StartNextRound()
     {
         ResetAllValues();
         SwitchTurns();
-        //Controls.Clear();
-        //FRM_Game_Load();
     }
     void ResetAllValues()
     {
-        _guesser.ResetAllValues();
+        guesser.ResetAllValues();
         _differentLettersInWord.Clear();
     }
     void CheckIfRoundIsOver()
     {
-        if (_guesser.EndRound)
+        if (guesser.EndRound)
         {
-            _guesser.EndRound = false;
+            guesser.EndRound = false;
             StartNextRound();
         }
     }
@@ -163,81 +165,37 @@ public class Game
     {
         if (teamCollection.GetTeamList()[0].Role == Roles.Guesser)
         {
-            _guesser = teamCollection.GetTeamList()[0];
-            _wordMaster = teamCollection.GetTeamList()[1];
+            guesser = teamCollection.GetTeamList()[0];
+            wordMaster = teamCollection.GetTeamList()[1];
         }
         else
         {
-            _wordMaster = teamCollection.GetTeamList()[0];
-            _guesser = teamCollection.GetTeamList()[1];
+            wordMaster = teamCollection.GetTeamList()[0];
+            guesser = teamCollection.GetTeamList()[1];
         }
     }
 
 
     // Methods - Display
-    void DisplayWordStripes()
-    {
-        //LBL_Word.Text = _wordClass.CalculateWordStripes(); frontend
-    }
     void DisplayLives()
     {
         //LBL_Lives.Text = "";
-        for (int i = 0; i < _guesser.Lives; i++)
+        for (int i = 0; i < guesser.Lives; i++)
         {
             //LBL_Lives.Text += "♥"; frontend
         }
     }
     void DisplayGoal()
     {
-        int goal = _guesser.GuessCollection.CalculateGoal(_differentLettersInWord);
+        int goal = guesser.GuessCollection.CalculateGoal(_differentLettersInWord);
         //LBL_Goal.Text = "Goal < " + goal.ToString(); frontend
     }
 
-    // Methods - Update
-    void UpdateStripes()
-    {
-        //LBL_Word.Text = _wordClass.Stripes;
-        //frontend
-    }
-    void UpdateRemainingLetters()
-    {
-        //int remaingingLetters = 26 - _guesser.GuessCollection.guessedLetters.Count;
-        //LBL_RemainingLetters.Text = "Remaining Letters: " + remaingingLetters;
-        //frontend?
-    }
-    void UpdatePoints()
-    {
-        //LBL_TeamOnePoints.Text = _teamCollection.GetTeamList()[0].Name + ": " + _teamCollection.GetTeamList()[0].Score;
-        //LBL_TeamTwoPoints.Text = _teamCollection.GetTeamList()[1].Name + ": " + _teamCollection.GetTeamList()[1].Score;
-        //frontend
-    }
-    void UpdateRoleRelatedLabels()
-    {
-        //foreach (Team team in _teamCollection.GetTeamList())
-        //{
-        //    if (team.Role == Roles.Wordmaster)
-        //    {
-        //        LBL_Wordmaster.Text = "Wordmaster: " + team.Name;
-        //        LBL_TeamEnterWord.Text = team.Name + " enter a word";
-        //    }
-        //    else if (team.Role == Roles.Guesser)
-        //    {
-        //        LBL_Guesser.Text = "Guesser: " + team.Name;
-        //    }
-        //} Frontend
-    }
-
     // Events
-    private void FRM_Game_Load(object sender, EventArgs e)
-    {
-        SetGuesserAndWordMaster();
-        UpdateRoleRelatedLabels();
-        UpdatePoints();
-    }
     private void BTN_Submit_Click(object sender, EventArgs e)
     {
         string word = "placeholder"; /*TB_Word.Text.ToUpper();*/
-        _wordClass = new WordClass(word, _guesser.GuessCollection);
+        _wordClass = new WordClass(word, guesser.GuessCollection);
 
         _differentLettersInWord = WordClass.CountDifferentLetters(_wordClass.Word);
         //LB_Test.Items.Clear();
@@ -248,11 +206,10 @@ public class Game
 
         if (_differentLettersInWord.Count > 3)
         {
-            _guesser.CalculateLives(_differentLettersInWord);
+            guesser.CalculateLives(_differentLettersInWord);
             DisplayGoal();
-            DisplayWordStripes();
             DisplayLives();
-            _guesser.GuessCollection.SetWord(_wordClass);
+            guesser.GuessCollection.SetWord(_wordClass);
             //GB_CreateWord.Enabled = false;
             //GB_Guess.Enabled = true;
         }
@@ -262,10 +219,122 @@ public class Game
         }
     }
 
-    // Events - Letter buttons
-    private void BTN_A_Click(object sender, EventArgs e)
+    public void LetterClickHandler(string letter)
     {
-        //BTN_A.Enabled = false;
+        letter = letter.ToUpper();
+        if (letter == "A")
+        {
+            Guess(letter);
+        }
+        else if (letter == "B")
+        {
+            Guess(letter);
+        }
+        else if (letter == "C")
+        {
+            Guess(letter);
+        }
+        else if (letter == "D")
+        {
+            Guess(letter);
+        }
+        else if (letter == "E")
+        {
+            Guess(letter);
+        }
+        else if (letter == "F")
+        {
+            Guess(letter);
+        }
+        else if (letter == "G")
+        {
+            Guess(letter);
+        }
+        else if (letter == "H")
+        {
+            Guess(letter);
+        }
+        else if (letter == "I")
+        {
+            Guess(letter);
+        }
+        else if (letter == "J")
+        {
+            Guess(letter);
+        }
+        else if (letter == "K")
+        {
+            Guess(letter);
+        }
+        else if (letter == "L")
+        {
+            Guess(letter);
+        }
+        else if (letter == "M")
+        {
+            Guess(letter);
+        }
+        else if (letter == "N")
+        {
+            Guess(letter);
+        }
+        else if (letter == "O")
+        {
+            Guess(letter);
+        }
+        else if (letter == "P")
+        {
+            Guess(letter);
+        }
+        else if (letter == "Q")
+        {
+            Guess(letter);
+        }
+        else if (letter == "R")
+        {
+            Guess(letter);
+        }
+        else if (letter == "S")
+        {
+            Guess(letter);
+        }
+        else if (letter == "T")
+        {
+            Guess(letter);
+        }
+        else if (letter == "U")
+        {
+            Guess(letter);
+        }
+        else if (letter == "V")
+        {
+            Guess(letter);
+        }
+        else if (letter == "W")
+        {
+            Guess(letter);
+        }
+        else if (letter == "X")
+        {
+            Guess(letter);
+        }
+        else if (letter == "Y")
+        {
+            Guess(letter);
+        }
+        else if (letter == "Z")
+        {
+            Guess(letter);
+        }
+        else
+        {
+            Guess("jdsngksvjeirunjdflzjbnjsiec-=-24359");
+        }
+    }
+
+    // Events - Letter buttons
+    private void BTN_A_Click()
+    {
         string myLetter = "A";
         Guess(myLetter);
     }

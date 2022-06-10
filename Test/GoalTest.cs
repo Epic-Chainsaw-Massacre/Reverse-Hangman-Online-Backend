@@ -8,6 +8,15 @@ namespace Test
 
     public class GoalTest
     {
+        /*
+        In this test you see a word as input and a number as output, the number gets calculated as follows
+        example:
+        word = help
+        differentLetters = 4 (h=1, e=2, l=3, p=4)
+        goal < differentLetters * 2
+        goal < 4 * 2
+        goal < 8
+        */ 
         [Test]
         [TestCase("help", "goal < 8")]
         [TestCase("helps", "goal < 10")]
