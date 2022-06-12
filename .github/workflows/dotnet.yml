@@ -24,3 +24,11 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
 
+    - name: Build and Push Docker Image
+      uses: mr-smithers-excellent/docker-build-push@v4
+      with:
+        image: crossychainsaw/reverse-hangman-online-backend
+        registry: docker.io
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+

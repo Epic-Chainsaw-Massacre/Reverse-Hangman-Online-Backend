@@ -48,18 +48,6 @@ GameSetup gameSetup = new GameSetup();
 
 
 // ROUTING -> https://localhost:7054
-app.MapGet("/test", () =>
-{
-    WordClass word = new WordClass("hello");
-    return word;
-}).WithName("GetTest");
-
-app.MapGet("/test2", ([System.Web.Http.FromBody] string word) =>
-{
-    WordClass word1 = new WordClass(word);
-    return word1;
-}).WithName("GetTest2");
-
 app.MapGet("/Lives", ([FromUri] string word) =>
 {
     gameSetup.differentLettersInWord = WordClass.CountDifferentLetters(word);
@@ -69,8 +57,16 @@ app.MapGet("/Lives", ([FromUri] string word) =>
 
 app.MapGet("/Goal", ([FromUri] string word) =>
 {
-    return gameSetup.game.teamCollection.GetTeamList()[0].GuessCollection.CalculateGoal(gameSetup.differentLettersInWord);
+    int goal = gameSetup.game.teamCollection.GetTeamList()[0].GuessCollection.CalculateGoal(gameSetup.differentLettersInWord);
+    return goal;
 }).WithName("GetGoal");
+
+app.MapGet("/GuessLine", ([FromUri] string word) =>
+{
+    gameSetup.game.SetWord(word);
+    string guessline = gameSetup.game._wordClass.CalculateWordStripes();
+    return guessline.Length / 2;
+}).WithName("GuessLine");
 
 //app.MapGet("/GuessLetter", ([FromUri] string letter) =>
 //{
@@ -106,13 +102,18 @@ public class Game
     public Team guesser;
     public Team wordMaster;
     List<string> _differentLettersInWord = new List<string>();
-    WordClass _wordClass;
+    public WordClass _wordClass;
     AlphabetClass _alphabetClass;
 
     // Methods
     public Game(TeamCollection importTeamCollection)
     {
         this.teamCollection = importTeamCollection;
+    }
+
+    public void SetWord(string word)
+    {
+        _wordClass = new WordClass(word);
     }
 
     public void Guess(string myLetter)
