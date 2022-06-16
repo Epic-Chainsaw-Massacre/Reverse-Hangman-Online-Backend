@@ -12,4 +12,4 @@ COPY --from=build /app ./
 
 EXPOSE 5000
 
-ENTRYPOINT ["dotnet", "Reverse-Hangman-Online-Backend.dll"]
+ENTRYPOINT ["dotnet", "reverse-hangman-online-backend.dll"]
